@@ -15,6 +15,84 @@ A beautiful and intuitive Todo application built with React Native and Expo. Org
 - 📱 **Responsive Design** - Works perfectly on all device sizes
 - ⌨️ **Keyboard Support** - Smart keyboard handling for better UX
 - 🎨 **Modern UI** - Clean design with smooth animations
+- 🌐 **REST API Integration** - Full CRUD operations with backend synchronization
+- 🔄 **Pull to Refresh** - Manual data refresh capability
+- ⚡ **Optimistic Updates** - Instant UI feedback with error recovery
+- 🛡️ **Error Handling** - Comprehensive error management and user feedback
+
+## 🌐 API Integration
+
+This app follows **industry best practices** for REST API consumption in React Native applications.
+
+### Architecture Overview
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐    ┌──────────────┐
+│   Components    │◄──►│   Custom Hooks   │◄──►│  Service Layer  │◄──►│  API Client  │
+│   (UI Logic)    │    │ (State Management│    │(Business Logic) │    │(HTTP Requests│
+└─────────────────┘    └──────────────────┘    └─────────────────┘    └──────────────┘
+```
+
+### API Endpoints
+
+The app integrates with a REST API running on `http://localhost:8080/api/tareas/`
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET    | `/api/tareas` | Fetch all tasks |
+| POST   | `/api/tareas` | Create a new task |
+| PUT    | `/api/tareas/{id}` | Update a task |
+| DELETE | `/api/tareas/{id}` | Delete a task |
+
+### Expected API Response Format
+
+```json
+{
+  "id": 1,
+  "titulo": "Task title",
+  "completada": false
+}
+```
+
+### Key Features
+
+#### 🏗️ **Layered Architecture**
+- **API Client** (`services/apiClient.js`) - HTTP request handling
+- **Service Layer** (`services/taskService.js`) - Business logic & data transformation
+- **Custom Hooks** (`hooks/useTasks.js`) - State management & side effects
+- **Components** - Pure UI components
+
+#### 🛡️ **Error Handling**
+- Network timeout handling (10s)
+- Request cancellation with AbortController
+- Error boundaries for React errors
+- User-friendly error messages
+- Automatic retry mechanisms
+- Optimistic updates with rollback
+
+#### ⚡ **Performance Optimizations**
+- **Optimistic Updates** - Immediate UI feedback
+- **Request Cancellation** - Prevents memory leaks
+- **Pull-to-Refresh** - Manual data synchronization
+- **useCallback** optimization - Prevents unnecessary re-renders
+- **Data Caching** - Computed values memoization
+
+#### 🔄 **State Management**
+```javascript
+// Custom hook provides:
+const {
+  tasks,           // Current tasks array
+  isLoading,       // Initial loading state
+  error,           // Error messages
+  isRefreshing,    // Pull-to-refresh state
+  completedCount,  // Computed completed tasks
+  totalCount,      // Total tasks count
+  addTask,         // Create new task
+  toggleTask,      // Toggle completion
+  deleteTask,      // Remove task
+  refreshTasks,    // Manual refresh
+} = useTasks();
+```
 
 ## 🚀 Getting Started
 
@@ -24,6 +102,7 @@ Make sure you have the following installed:
 - [Node.js](https://nodejs.org/) (version 14 or higher)
 - [Expo CLI](https://docs.expo.dev/get-started/installation/)
 - [Git](https://git-scm.com/)
+- **REST API Server** running on `http://localhost:8080/api/tareas/`
 
 ### Installation
 
@@ -38,7 +117,13 @@ Make sure you have the following installed:
    npm install
    ```
 
-3. **Start the development server**
+3. **Start your API server** (must be running on port 8080)
+   ```bash
+   # Example with your backend server
+   # Make sure your API is running and accessible
+   ```
+
+4. **Start the development server**
    ```bash
    npm start
    # or
@@ -69,11 +154,14 @@ npm run web
 1. Tap the **"+ Add New Task"** button at the bottom
 2. Enter your task description in the modal dialog
 3. Tap **"Add Task"** to save or **"Cancel"** to discard
+4. Task will be automatically synced with the API server
 
 ### Managing Tasks
 - **Complete Task**: Tap the blue checkbox next to any task
 - **Delete Task**: Tap the red ✗ button on the right side
 - **View Progress**: Check the completion counter in the header
+- **Refresh Tasks**: Pull down on the task list to refresh from server
+- **Offline Mode**: App handles network errors gracefully with user feedback
 
 ## 🏗️ Project Structure
 
@@ -82,7 +170,13 @@ ToDoApp/
 ├── App.js                      # Main application component
 ├── components/
 │   ├── Task.js                 # Individual task component
-│   └── AddTaskModal.js         # Modal dialog for adding tasks
+│   ├── AddTaskModal.js         # Modal dialog for adding tasks
+│   └── ErrorBoundary.js        # Error handling component
+├── hooks/
+│   └── useTasks.js             # Custom hook for task management
+├── services/
+│   ├── apiClient.js            # HTTP client with error handling
+│   └── taskService.js          # Task API service layer
 ├── assets/                     # Static assets (images, icons)
 ├── package.json                # Dependencies and scripts
 ├── app.json                    # Expo configuration
@@ -107,21 +201,79 @@ ToDoApp/
 }
 ```
 
-## 🎨 UI Components
+## 🎨 Architecture Components
 
-### Task Component
-- Displays individual tasks with completion status
+### API Layer
+**`services/apiClient.js`** - HTTP Client
+- Request/response interceptors
+- Timeout handling (10s default)
+- Request cancellation with AbortController
+- Consistent error handling across all requests
+
+**`services/taskService.js`** - Business Logic
+- Data transformation between API and app formats
+- CRUD operations for tasks
+- Error handling and retry logic
+
+### State Management
+**`hooks/useTasks.js`** - Custom Hook
+- Centralized task state management
+- Optimistic updates for better UX
+- Error handling with automatic retries
+- Loading states and refresh capabilities
+
+### UI Components
+**`components/Task.js`** - Individual Task
+- Displays task with completion status
 - Toggle completion functionality
 - Delete task capability
 - Visual feedback for completed tasks
 
-### AddTaskModal Component
+**`components/AddTaskModal.js`** - Task Creation
 - Modal dialog for task creation
 - Input validation and character limits
 - Auto-focus and keyboard handling
 - Cancel and confirmation actions
 
+**`components/ErrorBoundary.js`** - Error Handling
+- Catches React component errors
+- Provides user-friendly error messages
+- Retry mechanisms for failed operations
+
+## ⚙️ API Configuration
+
+### Environment Setup
+```javascript
+// services/apiClient.js
+const API_BASE_URL = 'http://localhost:8080/api';
+
+// Configurable timeout
+const timeout = 10000; // 10 seconds
+```
+
+### Request/Response Flow
+```
+User Action → Custom Hook → Service Layer → API Client → REST API
+     ↑                                                        ↓
+UI Update ← State Update ← Data Transform ← Response ← HTTP Response
+```
+
 ## 🔧 Customization
+
+### API Configuration
+```javascript
+// Change API endpoint
+const API_BASE_URL = 'https://your-api-domain.com/api';
+
+// Adjust timeout
+const timeout = 15000; // 15 seconds
+
+// Add authentication headers
+headers: {
+  'Authorization': `Bearer ${token}`,
+  'Content-Type': 'application/json'
+}
+```
 
 ### Styling
 All styles are defined using React Native's `StyleSheet`. You can customize:
@@ -133,10 +285,33 @@ All styles are defined using React Native's `StyleSheet`. You can customize:
 ### Features
 Easy to extend with additional features:
 - Task categories or tags
-- Due dates and reminders
+- Due dates and reminders  
 - Task priorities
-- Data persistence
-- Cloud synchronization
+- **Data persistence** (already implemented via API)
+- **Real-time synchronization** (WebSocket support)
+- **Offline mode** with sync when back online
+- **Push notifications** for task reminders
+
+### Advanced API Features
+```javascript
+// Add request interceptors
+apiClient.interceptors.request.use(config => {
+  config.headers.Authorization = `Bearer ${getToken()}`;
+  return config;
+});
+
+// Add response interceptors  
+apiClient.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      // Handle authentication errors
+      logout();
+    }
+    return Promise.reject(error);
+  }
+);
+```
 
 ## 🐛 Troubleshooting
 

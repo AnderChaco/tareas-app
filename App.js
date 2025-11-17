@@ -5,65 +5,113 @@ import {
   View,
   TouchableOpacity,
   FlatList,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import Task from './components/Task';
 import AddTaskModal from './components/AddTaskModal';
+import ErrorBoundary, { ErrorDisplay } from './components/ErrorBoundary';
+import { useTasks } from './hooks/useTasks';
 
 export default function App() {
-  const [taskItems, setTaskItems] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  
+  // Use custom hook for task management
+  const {
+    tasks,
+    isLoading,
+    error,
+    isRefreshing,
+    completedCount,
+    totalCount,
+    refreshTasks,
+    addTask,
+    toggleTask,
+    deleteTask,
+  } = useTasks();
 
-  const handleAddTask = (taskText) => {
-    const newTask = {
-      id: Date.now().toString(),
-      text: taskText,
-      completed: false,
-    };
-    setTaskItems([...taskItems, newTask]);
+  const handleAddTask = async (taskText) => {
+    try {
+      await addTask(taskText);
+    } catch (err) {
+      // Error is already handled in the hook
+      console.error('Failed to add task:', err);
+    }
   };
 
-  const toggleTask = (id) => {
-    setTaskItems(taskItems.map(item =>
-      item.id === id ? { ...item, completed: !item.completed } : item
-    ));
+  const handleToggleTask = async (taskId) => {
+    try {
+      await toggleTask(taskId);
+    } catch (err) {
+      // Error is already handled in the hook
+      console.error('Failed to toggle task:', err);
+    }
   };
 
-  const deleteTask = (id) => {
-    setTaskItems(taskItems.filter(item => item.id !== id));
+  const handleDeleteTask = async (taskId) => {
+    try {
+      await deleteTask(taskId);
+    } catch (err) {
+      // Error is already handled in the hook
+      console.error('Failed to delete task:', err);
+    }
   };
-
-  const completedCount = taskItems.filter(item => item.completed).length;
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="dark" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.sectionTitle}>Today's Tasks</Text>
-        <Text style={styles.taskCount}>
-          {completedCount} of {taskItems.length} completed
-        </Text>
-      </View>
+    <ErrorBoundary>
+      <View style={styles.container}>
+        <StatusBar style="dark" />
+        
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.sectionTitle}>Today's Tasks</Text>
+          <Text style={styles.taskCount}>
+            {completedCount} of {totalCount} completed
+          </Text>
+        </View>
 
-      {/* Task List */}
-      <View style={styles.tasksWrapper}>
-        <FlatList
-          data={taskItems}
-          renderItem={({ item }) => (
-            <Task
-              text={item.text}
-              completed={item.completed}
-              onToggle={() => toggleTask(item.id)}
-              onDelete={() => deleteTask(item.id)}
+        {/* Error Display */}
+        {error && (
+          <ErrorDisplay error={error} onRetry={refreshTasks} />
+        )}
+
+        {/* Task List */}
+        <View style={styles.tasksWrapper}>
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#55BCF6" />
+              <Text style={styles.loadingText}>Loading tasks...</Text>
+            </View>
+          ) : tasks.length === 0 && !error ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No tasks yet!</Text>
+              <Text style={styles.emptySubtext}>Tap the button below to add your first task</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={tasks}
+              renderItem={({ item }) => (
+                <Task
+                  text={item.text}
+                  completed={item.completed}
+                  onToggle={() => handleToggleTask(item.id)}
+                  onDelete={() => handleDeleteTask(item.id)}
+                />
+              )}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              style={styles.taskList}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={refreshTasks}
+                  tintColor="#55BCF6"
+                />
+              }
             />
           )}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          style={styles.taskList}
-        />
-      </View>
+        </View>
 
       {/* Add Task Button */}
       <View style={styles.addTaskButtonWrapper}>
@@ -81,7 +129,8 @@ export default function App() {
         onClose={() => setIsModalVisible(false)}
         onAddTask={handleAddTask}
       />
-    </View>
+      </View>
+    </ErrorBoundary>
   );
 }
 
@@ -123,6 +172,35 @@ const styles = StyleSheet.create({
   },
   taskList: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  emptyText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#999',
+    marginBottom: 10,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
   addTaskButtonWrapper: {
     paddingHorizontal: 20,
