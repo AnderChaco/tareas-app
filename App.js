@@ -206,6 +206,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 20,
     backgroundColor: '#F8F9FA',
+    marginBottom: 40
   },
   addTaskButton: {
     backgroundColor: '#55BCF6',
