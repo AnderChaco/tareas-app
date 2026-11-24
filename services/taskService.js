@@ -4,13 +4,13 @@ import { apiClient } from './apiClient';
 const transformTaskFromAPI = (apiTask) => ({
   id: apiTask.id?.toString() || Date.now().toString(),
   text: apiTask.titulo || apiTask.descripcion || apiTask.text || 'Untitled Task',
-  completed: apiTask.completada || apiTask.completed || false,
+  completed: apiTask.realizada ?? apiTask.completada ?? apiTask.completed ?? false,
 });
 
 const transformTaskToAPI = (task) => ({
   id: task.id,
-  titulo: task.text,
-  completada: task.completed,
+  descripcion: task.text,
+  realizada: task.completed,
 });
 
 // Task API Service
@@ -30,8 +30,8 @@ export const taskService = {
   async createTask(taskText) {
     try {
       const newTask = {
-        titulo: taskText,
-        completada: false,
+        descripcion: taskText,
+        realizada: false,
       };
       const response = await apiClient.post('/tareas', newTask);
       return transformTaskFromAPI(response);
@@ -67,7 +67,7 @@ export const taskService = {
   async toggleTask(task) {
     return this.updateTask(task.id, {
       ...transformTaskToAPI(task),
-      completada: !task.completed,
+      realizada: !task.completed,
     });
   },
 };

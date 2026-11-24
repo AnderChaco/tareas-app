@@ -1,6 +1,6 @@
 # Todo App 📝
 
-A beautiful and intuitive Todo application built with React Native and Expo. Organize your tasks with a clean interface and powerful features.
+A beautiful and intuitive Todo application built with React Native and Expo. Organize your tasks with a clean interface and powerful features XD.
 
 ![Todo App](https://img.shields.io/badge/Platform-React%20Native-blue?style=flat-square&logo=react)
 ![Expo](https://img.shields.io/badge/Built%20with-Expo-black?style=flat-square&logo=expo)
@@ -49,8 +49,8 @@ The app integrates with a REST API running on `http://localhost:8080/api/tareas/
 ```json
 {
   "id": 1,
-  "titulo": "Task title",
-  "completada": false
+  "descripcion": "Task description",
+  "realizada": false
 }
 ```
 
@@ -360,4 +360,4 @@ If you have any questions or need help with setup, please open an issue on GitHu
 
 **Happy Task Managing! 🎉**
 
-Made with ❤️ using React Native and Expo
+Made with ❤️ using React Native and Expo for educational purposes - Analistas 2024

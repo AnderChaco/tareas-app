@@ -1,6 +1,6 @@
 // API Configuration and Base Setup
 const localURL = 'http://localhost:8080';
-const productionURL = 'http://192.168.0.19:8080';
+const productionURL = 'http://192.168.1.33:8080';
 const API_BASE_URL = `${productionURL}/api`;
 
 // API Client with interceptors and error handling
